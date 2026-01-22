@@ -1,4 +1,5 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext } from "react";
+import type { ReactNode } from "react";
 import { useTickets } from "../hooks/useTickets";
 import type { Ticket } from "../hooks/useTickets";
 
