@@ -1,80 +1,82 @@
-# 🛠 Developer Setup – AI Support Copilot
+# 🛠️ Guía de Configuración Local – AI Support Copilot
 
-This guide explains how to run the **AI Support Copilot** stack locally using Docker.
+Este documento explica cómo ejecutar **AI Support Copilot** en entorno local utilizando **Docker**, permitiendo reproducir el flujo completo end-to-end sin depender de servicios en producción.
 
-The system is composed of **independent services**, each with its own Docker Compose file, connected through a shared Docker network.
-
----
-
-## 🧩 Architecture Overview
-
-### Services
-
-| Service | Purpose | Location | Port |
-|------|------|------|------|
-| AI API | Ticket classification (LLM + FastAPI) | `python-api/docker-compose.yml` | 8000 |
-| n8n | Workflow automation | `infra/docker-compose.n8n.yml` | 5678 |
-| MailHog | Local email inbox (SMTP) | `infra/docker-compose.n8n.yml` | 8025 / 1025 |
+El sistema está compuesto por **servicios desacoplados**, cada uno con su propio `docker-compose`, comunicándose mediante una **red Docker compartida**.
 
 ---
 
-### End-to-End Flow
+## 🧩 Visión General de la Arquitectura
 
-1. A ticket is created in Supabase (`tickets` table).
-2. n8n receives a webhook with `ticket_id` + `description`.
-3. n8n calls the AI API `POST /process-ticket`.
-4. The AI API classifies the ticket (category + sentiment).
-5. Supabase is updated (`processed=true`).
-6. If sentiment is `Negative`, n8n sends an email (captured by MailHog).
+### Servicios involucrados
 
----
-
-## 📋 Prerequisites
-
-- Docker ≥ 24
-- Docker Compose ≥ 2
-- curl
-- Supabase account (free tier)
-- HuggingFace account + token (free tier)
+| Servicio | Descripción                              | Ubicación                       | Puerto      |
+| -------- | ---------------------------------------- | ------------------------------- | ----------- |
+| AI API   | Clasificación de tickets (FastAPI + LLM) | `python-api/docker-compose.yml` | 8000        |
+| n8n      | Orquestación y automatización de flujos  | `infra/docker-compose.n8n.yml`  | 5678        |
+| MailHog  | Captura local de emails (SMTP fake)      | `infra/docker-compose.n8n.yml`  | 1025 / 8025 |
 
 ---
 
-## 🚀 Quick Start (Recommended)
+### 🔁 Flujo End-to-End
 
-From the project root:
+1. Se crea un ticket en Supabase (`tickets`).
+2. n8n recibe un **webhook** con `ticket_id` y `description`.
+3. n8n invoca la API de IA (`POST /process-ticket`).
+4. El microservicio clasifica el ticket (categoría + sentimiento).
+5. Supabase se actualiza (`processed = true`).
+6. Si el sentimiento es **Negativo**, n8n envía una notificación por email (capturada por MailHog).
+
+---
+
+## 📋 Requisitos Previos
+
+Antes de iniciar, asegúrate de tener:
+
+* Docker ≥ 24
+* Docker Compose ≥ 2
+* `curl`
+* Cuenta en Supabase (free tier)
+* Token de HuggingFace (free tier)
+
+---
+
+## 🚀 Inicio Rápido (Recomendado)
+
+Desde la raíz del proyecto ejecuta:
 
 ```bash
 make network
 make up
-````
+```
 
-That’s it.
+Esto levantará **todos los servicios necesarios**.
 
-Then open:
+### Accesos locales
 
-* **n8n UI** → [http://localhost:5678](http://localhost:5678)
-* **MailHog UI** → [http://localhost:8025](http://localhost:8025)
-* **API Health** → [http://localhost:8000/health](http://localhost:8000/health)
+* **n8n UI:** [http://localhost:5678](http://localhost:5678)
+* **MailHog UI:** [http://localhost:8025](http://localhost:8025)
+* **Health Check API:** [http://localhost:8000/health](http://localhost:8000/health)
 
 ---
 
-## 🌐 Docker Network (Required)
+## 🌐 Red Docker Compartida (Obligatoria)
 
-All services communicate via a shared Docker network.
+Todos los servicios se comunican mediante una red Docker común.
 
-Create it once:
+Crear una sola vez:
 
 ```bash
 docker network create shared_network
 ```
 
-> If it already exists, Docker will show an error — safe to ignore.
+> Si la red ya existe, Docker mostrará un error. Es seguro ignorarlo.
 
 ---
 
-## 1️⃣ Supabase Setup
+## 1️⃣ Configuración de Supabase
 
-Create a new Supabase project and run the following SQL:
+Crea un proyecto en Supabase y ejecuta el siguiente SQL:
 
 ```sql
 CREATE TABLE public.tickets (
@@ -87,46 +89,52 @@ CREATE TABLE public.tickets (
 );
 ```
 
----
+Este esquema completo también está disponible en:
 
-## 2️⃣ Environment Variables
-
-### 📌 AI API (`python-api/.env`)
-
-Create:
-
-```text
-ai-support-copilot/python-api/.env
+```
+/supabase/setup.sql
 ```
 
-Example:
+---
+
+## 2️⃣ Variables de Entorno
+
+### 📌 Microservicio de IA (`python-api/.env`)
+
+Crea el archivo:
+
+```
+python-api/.env
+```
+
+Ejemplo:
 
 ```env
 ENVIRONMENT=development
 
 SUPABASE_URL=https://<project-id>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<legacy-service-role-jwt>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 
 LLM_PROVIDER=huggingface
 HUGGINGFACE_API_TOKEN=hf_xxxxxxxxxxxxxxxxx
 HUGGINGFACE_MODEL=mistralai/Mistral-7B-Instruct-v0.2
 ```
 
-⚠️ Never commit `.env` files.
-Use `.env.example` as reference.
+⚠️ **Nunca** subas archivos `.env` al repositorio.
+Usa `.env.example` como referencia.
 
 ---
 
-## 3️⃣ Running Services Manually (Optional)
+## 3️⃣ Ejecución Manual de Servicios (Opcional)
 
-### AI API
+### ▶️ API de IA
 
 ```bash
 cd python-api
 docker compose up --build
 ```
 
-Health check:
+Verificar estado:
 
 ```bash
 curl http://localhost:8000/health
@@ -134,7 +142,7 @@ curl http://localhost:8000/health
 
 ---
 
-### n8n + MailHog
+### ▶️ n8n + MailHog
 
 ```bash
 cd infra
@@ -143,38 +151,41 @@ docker compose -f docker-compose.n8n.yml up
 
 ---
 
-## 4️⃣ n8n Configuration
+## 4️⃣ Configuración de n8n
 
-### UI
+### Acceso a la UI
 
 ```
 http://localhost:5678
 ```
 
-### Import Workflow
+### Importar Workflow
 
-1. Import workflow JSON:
+1. Importa el archivo:
 
 ```
-ai-support-copilot/n8n-workflow/ai-ticket-processing.json
+/n8n-workflow/ticket-processing.json
 ```
 
-2. Configure API request URL (Docker DNS):
+2. Configura la URL del microservicio (DNS Docker):
 
 ```
 http://ai-support-copilot-api:8000/process-ticket
 ```
 
-3. SMTP Configuration (MailHog):
+3. Configuración SMTP (MailHog):
 
-* Host: `mailhog`
-* Port: `1025`
-* Secure: OFF
-* Username / Password: empty
+| Campo    | Valor     |
+| -------- | --------- |
+| Host     | `mailhog` |
+| Puerto   | `1025`    |
+| Secure   | ❌         |
+| Usuario  | vacío     |
+| Password | vacío     |
 
-4. Activate the workflow
+4. Activa el workflow
 
-Webhook endpoint:
+### Webhook disponible
 
 ```
 POST http://localhost:5678/webhook/ticket-created
@@ -182,9 +193,9 @@ POST http://localhost:5678/webhook/ticket-created
 
 ---
 
-## 5️⃣ End-to-End Test
+## 5️⃣ Prueba End-to-End
 
-### Insert Ticket
+### Insertar ticket manualmente
 
 ```sql
 INSERT INTO public.tickets (id, description, processed)
@@ -195,7 +206,9 @@ VALUES (
 );
 ```
 
-### Trigger Webhook
+---
+
+### Disparar webhook
 
 ```bash
 curl -X POST http://localhost:5678/webhook/ticket-created \
@@ -206,16 +219,18 @@ curl -X POST http://localhost:5678/webhook/ticket-created \
   }'
 ```
 
-### Expected Result
+---
 
-* Ticket updated in Supabase
+### Resultado esperado
+
+* Ticket actualizado en Supabase
 * `processed = true`
-* `category` and `sentiment` filled
-* Email appears in MailHog if sentiment is `Negative`
+* `category` y `sentiment` completados
+* Email visible en MailHog si el sentimiento es **Negativo**
 
 ---
 
-## 🧪 Useful Commands
+## 🧪 Comandos Útiles
 
 ```bash
 make up
@@ -226,11 +241,11 @@ make restart
 
 ---
 
-## 🧠 Notes
+## 🧠 Notas Importantes
 
-* All services communicate through `shared_network`.
-* The AI API is LLM-provider agnostic.
-* MailHog is for local testing only (no real emails).
-* The system is fully reproducible using Docker.
+* Todos los servicios usan la red `shared_network`.
+* El microservicio es **agnóstico al proveedor de LLM**.
+* MailHog es solo para testing local (no envía correos reales).
+* El stack completo es **reproducible vía Docker**.
 
-```
+---

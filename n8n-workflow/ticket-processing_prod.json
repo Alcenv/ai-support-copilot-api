@@ -1,0 +1,172 @@
+{
+    "name": "AI Ticket Processing",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "ticket-created",
+          "options": {}
+        },
+        "id": "52a08c93-f543-4c90-aa55-5a2e67f2e808",
+        "name": "Ticket Created (Webhook)1",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          -768,
+          16
+        ],
+        "webhookId": "f23abb5a-2acb-46c5-94a4-19549e635613"
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://ai-support-copilot-api-69jq.onrender.com/process-ticket",
+          "sendHeaders": true,
+          "specifyHeaders": "json",
+          "jsonHeaders": "={\n  \"Content-Type\": \"application/json\"\n}",
+          "sendBody": true,
+          "bodyParameters": {
+            "parameters": [
+              {
+                "name": "ticket_id",
+                "value": "={{ $json.body.ticket_id }}"
+              },
+              {
+                "name": "description",
+                "value": "={{ $json.body.description }}"
+              }
+            ]
+          },
+          "options": {
+            "timeout": 60000
+          }
+        },
+        "id": "1c874776-ca32-4739-a5d6-ac137835ef0c",
+        "name": "Process Ticket (AI API)1",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4,
+        "position": [
+          -496,
+          16
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "string": [
+              {
+                "value1": "={{ $json.sentiment }}",
+                "operation": "equals",
+                "value2": "Negative"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "dcbeb2dc-0ed2-4eb2-804b-55d9c5fab92f",
+        "name": "Is Sentiment Negative?1",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          -272,
+          16
+        ]
+      },
+      {
+        "parameters": {
+          "fromEmail": "alerts@ai-copilot.local",
+          "toEmail": "support@company.local",
+          "subject": "⚠️ Negative Support Ticket Detected",
+          "text": "A support ticket has been classified as NEGATIVE.\n\nTicket ID: {{ $json.ticket_id }}\nCategory: {{ $json.category }}\nSentiment: {{ $json.sentiment }}",
+          "options": {}
+        },
+        "id": "34b7733a-df38-4bc1-a27b-ba4dbf808aab",
+        "name": "Send Alert Email1",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 1,
+        "position": [
+          0,
+          0
+        ],
+        "credentials": {
+          "smtp": {
+            "id": "lyC63fTuuLxvoHOR",
+            "name": "SMTP account"
+          }
+        }
+      }
+    ],
+    "pinData": {},
+    "connections": {
+      "Ticket Created (Webhook)1": {
+        "main": [
+          [
+            {
+              "node": "Process Ticket (AI API)1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process Ticket (AI API)1": {
+        "main": [
+          [
+            {
+              "node": "Is Sentiment Negative?1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Is Sentiment Negative?1": {
+        "main": [
+          [
+            {
+              "node": "Send Alert Email1",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "active": true,
+    "settings": {
+      "executionOrder": "v1",
+      "availableInMCP": false
+    },
+    "versionId": "afb8f101-879a-4f29-8c97-3c42cc6fb6fa",
+    "meta": {
+      "templateCredsSetupCompleted": true,
+      "instanceId": "9039da3cde11368c5b73228820e7cab3f1b723ee569f497fe330d176c4fce6bc"
+    },
+    "id": "O1DsEpZATuCStYDDnDBVP",
+    "tags": [
+      {
+        "name": "supabase",
+        "id": "DIUMgNS2TSsCRgiC",
+        "updatedAt": "2026-01-22T22:33:44.491Z",
+        "createdAt": "2026-01-22T22:33:44.491Z"
+      },
+      {
+        "name": "webhook",
+        "id": "0ZPtCrADsNSyHnP1",
+        "updatedAt": "2026-01-22T22:33:44.462Z",
+        "createdAt": "2026-01-22T22:33:44.462Z"
+      },
+      {
+        "name": "ai",
+        "id": "MCdHy9ddP3JLWgP8",
+        "updatedAt": "2026-01-22T22:33:44.559Z",
+        "createdAt": "2026-01-22T22:33:44.559Z"
+      },
+      {
+        "name": "mailhog",
+        "id": "n1J9lSWroDLJrMgc",
+        "updatedAt": "2026-01-22T22:33:44.523Z",
+        "createdAt": "2026-01-22T22:33:44.523Z"
+      }
+    ]
+  }
