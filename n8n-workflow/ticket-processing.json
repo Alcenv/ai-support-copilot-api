@@ -1,0 +1,172 @@
+{
+  "name": "AI Ticket Processing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticket-created",
+        "options": {}
+      },
+      "id": "d5ea1128-1b0c-4583-b93a-a5e4b7ca56a4",
+      "name": "Ticket Created (Webhook)1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        64,
+        -208
+      ],
+      "webhookId": "f23abb5a-2acb-46c5-94a4-19549e635613"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ai-support-copilot-api:8000/process-ticket",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ticket_id",
+              "value": "={{ $json.body.ticket_id }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.body.description }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "25419a0a-3f29-46f8-9ba8-490adc6a43bd",
+      "name": "Process Ticket (AI API)1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        336,
+        -208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.sentiment }}",
+              "operation": "equals",
+              "value2": "Negative"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1f97deaa-2a10-4f3c-884d-c5e3d74f008e",
+      "name": "Is Sentiment Negative?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -208
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "alerts@ai-copilot.local",
+        "toEmail": "support@company.local",
+        "subject": "⚠️ Negative Support Ticket Detected",
+        "text": "A support ticket has been classified as NEGATIVE.\n\nTicket ID: {{ $json.ticket_id }}\nCategory: {{ $json.category }}\nSentiment: {{ $json.sentiment }}",
+        "options": {}
+      },
+      "id": "8cb06f06-7d25-4049-a97d-c7ba39beac5e",
+      "name": "Send Alert Email1",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        832,
+        -224
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "BgyA3dk3mcpt83S6",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Ticket Created (Webhook)1": {
+      "main": [
+        [
+          {
+            "node": "Process Ticket (AI API)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Ticket (AI API)1": {
+      "main": [
+        [
+          {
+            "node": "Is Sentiment Negative?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Sentiment Negative?1": {
+      "main": [
+        [
+          {
+            "node": "Send Alert Email1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "f9f565cb-affc-45b7-ad1d-e136c0c5a5d5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "de3e2a42c819d27b4dece9c57524add84a8538c69d6b62610a1ea5c5f62f5f50"
+  },
+  "id": "1Wwo5I7oxnRuDQQXzmh9i",
+  "tags": [
+    {
+      "updatedAt": "2026-01-21T23:58:48.506Z",
+      "createdAt": "2026-01-21T23:58:48.506Z",
+      "id": "6VzgeLrfHQClwrxt",
+      "name": "supabase"
+    },
+    {
+      "updatedAt": "2026-01-21T23:58:48.518Z",
+      "createdAt": "2026-01-21T23:58:48.518Z",
+      "id": "8TpiVq6ncH2lElk2",
+      "name": "webhook"
+    },
+    {
+      "updatedAt": "2026-01-21T23:58:48.531Z",
+      "createdAt": "2026-01-21T23:58:48.531Z",
+      "id": "ROZBjCln8zNo546b",
+      "name": "ai"
+    },
+    {
+      "updatedAt": "2026-01-21T23:58:48.523Z",
+      "createdAt": "2026-01-21T23:58:48.523Z",
+      "id": "xucd85uJsDF18gWK",
+      "name": "mailhog"
+    }
+  ]
+}

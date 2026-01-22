@@ -1,0 +1,16 @@
+fastapi>=0.110
+uvicorn[standard]>=0.27
+
+pydantic>=2.6
+pydantic-settings>=2.2
+
+langchain>=0.2
+langchain-core>=0.2
+langchain-community>=0.2
+langchain-openai>=0.1
+langchain-google-genai>=0.1
+langchain-huggingface>=0.1.0
+huggingface_hub>=0.20.0
+
+supabase>=2.3
+python-dotenv>=1.0

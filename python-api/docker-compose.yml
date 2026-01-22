@@ -1,0 +1,20 @@
+networks:
+  shared_network:
+    external: true
+
+services:
+  api:
+    networks:
+      - shared_network
+    build: .
+    container_name: ai-support-copilot-api
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
