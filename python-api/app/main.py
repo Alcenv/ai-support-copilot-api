@@ -27,6 +27,19 @@ app.add_middleware(
 )
 
 # -------------------------
+# Root (nice for Render + humans)
+# -------------------------
+@app.get("/")
+def root():
+    return {
+        "service": settings.app_name,
+        "status": "running",
+        "environment": settings.environment,
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+# -------------------------
 # Supabase Client
 # -------------------------
 @lru_cache
